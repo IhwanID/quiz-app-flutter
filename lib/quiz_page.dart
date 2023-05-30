@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:quiz_app/model/answered_quiz.dart';
 import 'package:quiz_app/model/quiz.dart';
@@ -7,47 +8,32 @@ import 'package:quiz_app/score_page.dart';
 import 'package:quiz_app/utils/constant.dart';
 
 class QuizPage extends StatefulWidget {
-  const QuizPage({super.key});
+  final String topic;
+  const QuizPage({super.key, required this.topic});
 
   @override
   State<QuizPage> createState() => _QuizPageState();
 }
 
 class _QuizPageState extends State<QuizPage> {
-  final List<Quiz> quizList = [
-    Quiz(
-        question: "How are you?",
-        choices: ["fine", "okey", "not bad", "not good"],
-        image: "https://picsum.photos/250?image=9",
-        answer: "fine"),
-    Quiz(
-        question: "Who is current presiden of Indonesia?",
-        choices: ["fine", "okey", "not bad", "not good"],
-        image: "https://picsum.photos/250?image=8",
-        answer: "fine"),
-    Quiz(
-        question: "Which is the fastest animal on the land",
-        choices: ["fine", "okey", "not bad", "not good"],
-        image: "https://picsum.photos/250?image=7",
-        answer: "fine"),
-    Quiz(
-        question: "what is the first month of the year?",
-        choices: ["fine", "okey", "not bad", "not good"],
-        image: "https://picsum.photos/250?image=6",
-        answer: "fine"),
-    Quiz(
-        question: "How many month of the year?",
-        choices: ["fine", "okey", "not bad", "not good"],
-        image: "https://picsum.photos/250?image=5",
-        answer: "fine"),
-  ];
+  List<Quiz> quizList = [];
+  getQuizList() async {
+    final querySnapshot =
+        await FirebaseFirestore.instance.collection(widget.topic).get();
+    List<QueryDocumentSnapshot> docs = querySnapshot.docs;
+    final data = docs
+        .map((doc) => Quiz.fromJson(doc.data() as Map<String, dynamic>))
+        .toList();
+    quizList = data;
+    startTimeout();
+  }
 
   List<AnsweredQuiz> userAnswers = [];
 
   late Timer timer;
   final interval = const Duration(seconds: 1);
 
-  final int timerMaxSeconds = 3;
+  final int timerMaxSeconds = 10;
 
   int currentSeconds = 0;
   int currentQuiz = 0;
@@ -65,13 +51,16 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   processQuiz(String userAnswer) {
-    userAnswers.add(
-                          AnsweredQuiz(question: quizList[currentQuiz].question, correctAnswer: quizList[currentQuiz].answer, userAnswer: userAnswer)
-                        );
+    userAnswers.add(AnsweredQuiz(
+        question: quizList[currentQuiz].question,
+        correctAnswer: quizList[currentQuiz].answer,
+        userAnswer: userAnswer));
     timer.cancel();
     if (currentQuiz == (quizList.length - 1)) {
-      Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) =>  ScorePage(userAnswer: userAnswers,)));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => ScorePage(
+                userAnswer: userAnswers,
+              )));
     } else {
       currentQuiz += 1;
       startTimeout();
@@ -80,7 +69,7 @@ class _QuizPageState extends State<QuizPage> {
 
   @override
   void initState() {
-    startTimeout();
+    getQuizList();
     super.initState();
   }
 
@@ -113,61 +102,73 @@ class _QuizPageState extends State<QuizPage> {
       ),
       backgroundColor: Constant.primaryColor,
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            LinearProgressIndicator(
-              backgroundColor: Constant.bgTimerColor,
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Constant.secondaryColor),
-              value: currentSeconds / timerMaxSeconds,
-            ),
-            Container(
-              decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.all(Radius.circular(20))),
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              width: double.infinity,
-              child: Column(
-                children: [
+        child: quizList.isEmpty
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: const [
+                  CircularProgressIndicator(),
                   Text(
-                    quizList[currentQuiz].question,
-                    style: const TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.bold,
+                    "Fetching data . . .",
+                    style: TextStyle(color: Colors.white),
+                  )
+                ],
+              )
+            : Column(
+                children: [
+                  LinearProgressIndicator(
+                    backgroundColor: Constant.bgTimerColor,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        Constant.secondaryColor),
+                    value: currentSeconds / timerMaxSeconds,
+                  ),
+                  Container(
+                    decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.all(Radius.circular(20))),
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 16),
+                    width: double.infinity,
+                    child: Column(
+                      children: [
+                        Text(
+                          quizList[currentQuiz].question,
+                          style: const TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        quizList[currentQuiz].image != ""
+                            ? Image.network(quizList[currentQuiz].image!)
+                            : Container()
+                      ],
                     ),
                   ),
-                  quizList[currentQuiz].image != ""
-                      ? Image.network(quizList[currentQuiz].image!)
-                      : Container()
+                  ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      itemCount: quizList[currentQuiz].choices.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                minimumSize: const Size.fromHeight(50),
+                                shape: const StadiumBorder()),
+                            onPressed: () {
+                              processQuiz(quizList[currentQuiz].choices[index]);
+                            },
+                            child: Text(
+                              quizList[currentQuiz].choices[index],
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                          ),
+                        );
+                      }),
                 ],
               ),
-            ),
-            ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: quizList[currentQuiz].choices.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(50),
-                          shape: const StadiumBorder()),
-                      onPressed: () {
-                        processQuiz(quizList[currentQuiz].choices[index]);
-                      },
-                      child: Text(
-                        quizList[0].choices[index],
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  );
-                }),
-          ],
-        ),
       ),
     );
   }

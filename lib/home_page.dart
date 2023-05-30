@@ -51,7 +51,7 @@ class HomePage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const QuizPage()),
+                              builder: (context) =>  const QuizPage(topic: "random",)),
                         );
                       },
                       child: const Text("PLAY")),
