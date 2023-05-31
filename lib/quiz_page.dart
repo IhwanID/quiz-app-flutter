@@ -33,7 +33,7 @@ class _QuizPageState extends State<QuizPage> {
   late Timer timer;
   final interval = const Duration(seconds: 1);
 
-  final int timerMaxSeconds = 10;
+  final int timerMaxSeconds = 30;
 
   int currentSeconds = 0;
   int currentQuiz = 0;
