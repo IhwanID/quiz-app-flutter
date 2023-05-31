@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quiz_app/model/answered_quiz.dart';
 import 'package:quiz_app/utils/constant.dart';
 import 'dart:math' as math;
+import 'package:share_plus/share_plus.dart';
 
 class ScorePage extends StatelessWidget {
   const ScorePage({
@@ -56,7 +57,10 @@ class ScorePage extends StatelessWidget {
               ],
             ),
             ElevatedButton(
-                onPressed: () {}, child: const Text("Share your score")),
+                onPressed: () {
+                  Share.share('I got correct ${getPercentageText()} Quiz');
+
+                }, child: const Text("Share your score")),
             const Text(
               "Your Report",
               style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold,color: Colors.white),

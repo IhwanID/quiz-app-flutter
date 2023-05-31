@@ -103,16 +103,10 @@ class _QuizPageState extends State<QuizPage> {
       backgroundColor: Constant.primaryColor,
       body: SingleChildScrollView(
         child: quizList.isEmpty
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: const [
-                  CircularProgressIndicator(),
-                  Text(
-                    "Fetching data . . .",
-                    style: TextStyle(color: Colors.white),
-                  )
-                ],
-              )
+            ? SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height - kToolbarHeight,
+              child: const Center(child: CircularProgressIndicator()))
             : Column(
                 children: [
                   LinearProgressIndicator(

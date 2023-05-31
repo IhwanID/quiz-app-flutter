@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quiz_app/quiz_page.dart';
 import 'package:quiz_app/topic_page.dart';
 import 'package:quiz_app/utils/constant.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -91,7 +92,9 @@ class HomePage extends StatelessWidget {
                         Icons.share,
                         color: Colors.blue,
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        Share.share('Quiz App is best app XD');
+                      },
                       label: const Text('Share'),
                     ),
                     TextButton.icon(
